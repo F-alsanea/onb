@@ -6,13 +6,16 @@ import {
   Users,
   Download,
   CheckCircle2,
+  XCircle,
   Copy,
   Smartphone,
   Monitor,
   Layout,
   Type,
   Send,
-  FileText
+  FileText,
+  Loader2,
+  Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as XLSX from 'xlsx';
@@ -71,8 +74,8 @@ const TabButton = ({ active, onClick, icon: Icon, label }: { active: boolean, on
   <button
     onClick={onClick}
     className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all border-b-2 ${active
-        ? 'border-black text-black'
-        : 'border-transparent text-gray-400 hover:text-gray-600'
+      ? 'border-black text-black'
+      : 'border-transparent text-gray-400 hover:text-gray-600'
       }`}
   >
     <Icon size={18} />
@@ -83,7 +86,7 @@ const TabButton = ({ active, onClick, icon: Icon, label }: { active: boolean, on
 // --- Main App ---
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'preview' | 'editor' | 'recipients' | 'code'>('editor');
+  const [activeTab, setActiveTab] = useState<'preview' | 'editor' | 'recipients' | 'code' | 'send'>('editor');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
   const [config, setConfig] = useState<EmailConfig>(DEFAULT_CONFIG);
   const [recipients, setRecipients] = useState<Recipient[]>([
@@ -140,6 +143,13 @@ export default function App() {
   ]);
   const [copied, setCopied] = useState(false);
   const [previewName, setPreviewName] = useState('فيصل');
+
+  // --- Send State ---
+  const [emailPassword, setEmailPassword] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [sendResults, setSendResults] = useState<Array<{ name: string; email: string; success: boolean; error?: string }>>([]);
+  const [sendSummary, setSendSummary] = useState<{ successCount: number; total: number } | null>(null);
+  const [sendError, setSendError] = useState('');
 
   // Generate the HTML Template String
   const htmlTemplate = useMemo(() => {
@@ -453,6 +463,48 @@ def send_emails(excel_file_path):
     saveAs(blob, `Email_Design_${previewName}.doc`);
   };
 
+  const handleSendEmails = async () => {
+    if (!emailPassword.trim()) {
+      setSendError('يرجى إدخال كلمة مرور البريد الإلكتروني');
+      return;
+    }
+    if (recipients.length === 0) {
+      setSendError('لا يوجد مستلمون. أضف مستلمين أولاً من تاب المستلمون');
+      return;
+    }
+    setIsSending(true);
+    setSendResults([]);
+    setSendSummary(null);
+    setSendError('');
+
+    try {
+      const response = await fetch('/api/send-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipients,
+          htmlTemplate,
+          subject: config.headline,
+          password: emailPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setSendError(data.error || 'حدث خطأ غير متوقع');
+        return;
+      }
+
+      setSendResults(data.results);
+      setSendSummary({ successCount: data.successCount, total: data.total });
+    } catch (err: any) {
+      setSendError(`لم يتمكن من الاتصال بالسيرفر. تأكد من تشغيل الأمر: npm run start`);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans selection:bg-black selection:text-white">
       {/* Header */}
@@ -488,6 +540,7 @@ def send_emails(excel_file_path):
           <TabButton active={activeTab === 'preview'} onClick={() => setActiveTab('preview')} icon={Eye} label="المعاينة" />
           <TabButton active={activeTab === 'recipients'} onClick={() => setActiveTab('recipients')} icon={Users} label="المستلمون" />
           <TabButton active={activeTab === 'code'} onClick={() => setActiveTab('code')} icon={Code} label="كود Python" />
+          <TabButton active={activeTab === 'send'} onClick={() => setActiveTab('send')} icon={Send} label="إرسال" />
         </div>
       </header>
 
@@ -814,6 +867,112 @@ def send_emails(excel_file_path):
                   </p>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {/* ===== SEND TAB ===== */}
+          {activeTab === 'send' && (
+            <motion.div
+              key="send"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="max-w-2xl mx-auto"
+            >
+              {/* Info Card */}
+              <div className="bg-white rounded-3xl border border-gray-200 p-8 shadow-sm mb-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
+                    <Send size={18} className="text-white" />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-lg">إرسال الرسائل</h2>
+                    <p className="text-sm text-gray-500">سيتم إرسال القالب كاملاً لـ {recipients.length} مستلم</p>
+                  </div>
+                </div>
+
+                {/* Sender Info */}
+                <div className="bg-gray-50 rounded-2xl p-4 mb-6 flex items-center gap-3">
+                  <Mail size={16} className="text-gray-400" />
+                  <div>
+                    <p className="text-xs text-gray-400">المُرسِل</p>
+                    <p className="text-sm font-semibold">Faisal Alsanea &lt;falsuni@kakigroup.co&gt;</p>
+                  </div>
+                </div>
+
+                {/* Password Field */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <Lock size={14} /> كلمة مرور بريد الشركة (App Password)
+                  </label>
+                  <input
+                    type="password"
+                    value={emailPassword}
+                    onChange={(e) => setEmailPassword(e.target.value)}
+                    placeholder="أدخل كلمة مرور بريدك الإلكتروني..."
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-0 transition-all outline-none font-mono"
+                    disabled={isSending}
+                  />
+                  <p className="text-xs text-gray-400 mt-2">كلمة المرور لا تُحفظ ولا تُرسل إلا للسيرفر المحلي</p>
+                </div>
+
+                {/* Error Message */}
+                {sendError && (
+                  <div className="bg-red-50 border border-red-100 text-red-700 rounded-xl p-4 mb-4 text-sm">
+                    ❌ {sendError}
+                  </div>
+                )}
+
+                {/* Send Button */}
+                <button
+                  onClick={handleSendEmails}
+                  disabled={isSending}
+                  className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-black text-white rounded-2xl font-bold text-base hover:bg-gray-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSending ? (
+                    <><Loader2 size={20} className="animate-spin" /> جاري الإرسال...</>
+                  ) : (
+                    <><Send size={20} /> إرسال لجميع الموظفين ({recipients.length})</>
+                  )}
+                </button>
+              </div>
+
+              {/* Summary */}
+              {sendSummary && (
+                <div className={`rounded-2xl p-5 mb-6 flex items-center gap-3 ${sendSummary.successCount === sendSummary.total
+                    ? 'bg-green-50 border border-green-100'
+                    : 'bg-yellow-50 border border-yellow-100'
+                  }`}>
+                  <CheckCircle2 size={22} className="text-green-600 shrink-0" />
+                  <p className="font-bold text-green-800">
+                    ✨ تمت العملية: {sendSummary.successCount} / {sendSummary.total} تم الإرسال بنجاح
+                  </p>
+                </div>
+              )}
+
+              {/* Results List */}
+              {sendResults.length > 0 && (
+                <div className="bg-white rounded-3xl border border-gray-200 overflow-hidden shadow-sm">
+                  <div className="px-6 py-4 border-b border-gray-100">
+                    <h3 className="font-bold text-sm">تفاصيل الإرسال</h3>
+                  </div>
+                  <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto">
+                    {sendResults.map((r, i) => (
+                      <div key={i} className="px-6 py-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">{r.name}</p>
+                          <p className="text-xs text-gray-400 font-mono">{r.email}</p>
+                          {r.error && <p className="text-xs text-red-500 mt-1">{r.error}</p>}
+                        </div>
+                        {r.success
+                          ? <CheckCircle2 size={20} className="text-green-500 shrink-0" />
+                          : <XCircle size={20} className="text-red-400 shrink-0" />
+                        }
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
