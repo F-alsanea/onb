@@ -151,6 +151,11 @@ export default function App() {
   const [sendSummary, setSendSummary] = useState<{ successCount: number; total: number } | null>(null);
   const [sendError, setSendError] = useState('');
 
+  // --- Selection & Manual Entry State ---
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+  const [manualEmail, setManualEmail] = useState('');
+  const [manualName, setManualName] = useState('');
+
   // Generate the HTML Template String
   const htmlTemplate = useMemo(() => {
     return `
@@ -468,10 +473,18 @@ def send_emails(excel_file_path):
       setSendError('يرجى إدخال كلمة مرور البريد الإلكتروني');
       return;
     }
-    if (recipients.length === 0) {
-      setSendError('لا يوجد مستلمون. أضف مستلمين أولاً من تاب المستلمون');
+
+    // Combine selected standard recipients with manual entry
+    const finalRecipients = [
+      ...recipients.filter(r => selectedEmails.includes(r.email)),
+      ...(manualEmail.trim() ? [{ name: manualName.trim() || 'عميل', email: manualEmail.trim() }] : [])
+    ];
+
+    if (finalRecipients.length === 0) {
+      setSendError('يرجى اختيار مستلم واحد على الأقل أو إضافة إيميل يدوي');
       return;
     }
+
     setIsSending(true);
     setSendResults([]);
     setSendSummary(null);
@@ -482,7 +495,7 @@ def send_emails(excel_file_path):
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          recipients,
+          recipients: finalRecipients,
           htmlTemplate,
           subject: config.headline,
           password: emailPassword,
@@ -900,6 +913,73 @@ def send_emails(excel_file_path):
                   </div>
                 </div>
 
+                {/* Manual Entry */}
+                <div className="mb-6 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                  <h3 className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
+                    <Mail size={14} /> إضافة مستلم يدوي (اختياري)
+                  </h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="text"
+                      value={manualName}
+                      onChange={(e) => setManualName(e.target.value)}
+                      placeholder="اسم المستلم..."
+                      className="px-3 py-2 rounded-lg border border-blue-200 focus:border-blue-500 outline-none text-sm"
+                    />
+                    <input
+                      type="email"
+                      value={manualEmail}
+                      onChange={(e) => setManualEmail(e.target.value)}
+                      placeholder="البريد الإلكتروني..."
+                      className="px-3 py-2 rounded-lg border border-blue-200 focus:border-blue-500 outline-none text-sm"
+                    />
+                  </div>
+                  <p className="text-[10px] text-blue-600 mt-2">سيتم الإرسال لهذا الشخص بالإضافة للمحددين أدناه</p>
+                </div>
+
+                {/* Recipient Selection */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                      <Users size={14} /> اختر المستلمين من القائمة ({selectedEmails.length})
+                    </label>
+                    <button
+                      onClick={() => {
+                        if (selectedEmails.length === recipients.length) {
+                          setSelectedEmails([]);
+                        } else {
+                          setSelectedEmails(recipients.map(r => r.email));
+                        }
+                      }}
+                      className="text-xs font-bold text-black hover:underline"
+                    >
+                      {selectedEmails.length === recipients.length ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+                    </button>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto border border-gray-100 rounded-2xl divide-y divide-gray-50 bg-gray-50/30">
+                    {recipients.map((r, i) => (
+                      <label key={i} className="flex items-center px-4 py-3 hover:bg-white transition-colors cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={selectedEmails.includes(r.email)}
+                          onChange={() => {
+                            if (selectedEmails.includes(r.email)) {
+                              setSelectedEmails(selectedEmails.filter(e => e !== r.email));
+                            } else {
+                              setSelectedEmails([...selectedEmails, r.email]);
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-black focus:ring-0 cursor-pointer"
+                        />
+                        <div className="mr-3">
+                          <p className="text-sm font-medium group-hover:text-black transition-colors">{r.name}</p>
+                          <p className="text-[11px] text-gray-400 font-mono">{r.email}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Password Field */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
@@ -932,7 +1012,9 @@ def send_emails(excel_file_path):
                   {isSending ? (
                     <><Loader2 size={20} className="animate-spin" /> جاري الإرسال...</>
                   ) : (
-                    <><Send size={20} /> إرسال لجميع الموظفين ({recipients.length})</>
+                    <><Send size={20} /> إرسال للمحددين ({
+                      (selectedEmails.length) + (manualEmail.trim() ? 1 : 0)
+                    })</>
                   )}
                 </button>
               </div>
@@ -940,8 +1022,8 @@ def send_emails(excel_file_path):
               {/* Summary */}
               {sendSummary && (
                 <div className={`rounded-2xl p-5 mb-6 flex items-center gap-3 ${sendSummary.successCount === sendSummary.total
-                    ? 'bg-green-50 border border-green-100'
-                    : 'bg-yellow-50 border border-yellow-100'
+                  ? 'bg-green-50 border border-green-100'
+                  : 'bg-yellow-50 border border-yellow-100'
                   }`}>
                   <CheckCircle2 size={22} className="text-green-600 shrink-0" />
                   <p className="font-bold text-green-800">
