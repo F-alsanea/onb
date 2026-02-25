@@ -49,7 +49,7 @@ const DEFAULT_CONFIG: EmailConfig = {
   signatureTitle: "HR Specialist | Talent Acquisition | KAKI GROUP",
   signatureTel: "+966 (02) 6130264 – Ext 116",
   signatureMob: "+966 596995687",
-  signatureEmail: "falsuni@kakigroup.co",
+  signatureEmail: "falsanea@kakigroup.co",
   signatureAddress: "Alhamraa dist., PO Box 18833, Jeddah 21425, Kingdom of Saudi Arabia",
   logoUrl: "https://kakihg.net/wp-content/uploads/2025/08/kaki_logo-footer.png"
 };
@@ -100,7 +100,7 @@ export default function App() {
     { name: "دينا الغامدي", email: "dalghamdi@kakigroup.co" },
     { name: "علي خواجي", email: "akhawaji@kakigroup.co" },
     { name: "عبدالعزيز فالح", email: "abdulaziz-faleh@kakigroup.co" },
-    { name: "فيصل السني", email: "falsuni@kakigroup.co" },
+    { name: "فيصل السني", email: "falsanea@kakigroup.co" },
     { name: "روان الغامدي", email: "ralghamdi@kakigroup.co" },
     { name: "نشأت قواس", email: "ngawass@kakigroup.co" },
     { name: "رشا ساعاتي", email: "ralsaati@kakigroup.co" },
@@ -146,6 +146,7 @@ export default function App() {
 
   // --- Send State ---
   const [emailPassword, setEmailPassword] = useState('');
+  const [senderEmail, setSenderEmail] = useState('falsuni@kakigroup.co');
   const [isSending, setIsSending] = useState(false);
   const [sendResults, setSendResults] = useState<Array<{ name: string; email: string; success: boolean; error?: string }>>([]);
   const [sendSummary, setSendSummary] = useState<{ successCount: number; total: number } | null>(null);
@@ -499,6 +500,7 @@ def send_emails(excel_file_path):
           htmlTemplate,
           subject: config.headline,
           password: emailPassword,
+          senderEmail: senderEmail,
         }),
       });
 
@@ -905,12 +907,21 @@ def send_emails(excel_file_path):
                 </div>
 
                 {/* Sender Info */}
-                <div className="bg-gray-50 rounded-2xl p-4 mb-6 flex items-center gap-3">
-                  <Mail size={16} className="text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-400">المُرسِل</p>
-                    <p className="text-sm font-semibold">Faisal Alsanea &lt;falsuni@kakigroup.co&gt;</p>
-                  </div>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <Mail size={14} /> إيميل المُرسل (الدوام)
+                  </label>
+                  <input
+                    type="email"
+                    value={senderEmail}
+                    onChange={(e) => setSenderEmail(e.target.value)}
+                    placeholder="falsuni@kakigroup.co"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-0 transition-all outline-none"
+                    disabled={isSending}
+                  />
+                  <p className="text-[10px] text-gray-400 mt-2">
+                    تلميح: إذا لم ينجح، جرب نهايته بـ <span className="font-mono text-blue-600">@kakihg.net</span>
+                  </p>
                 </div>
 
                 {/* Manual Entry */}

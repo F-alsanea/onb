@@ -29,10 +29,13 @@ interface SendResult {
 }
 
 app.post('/api/send-emails', async (req: Request, res: Response) => {
-    const { recipients, htmlTemplate, subject, password }: SendRequest = req.body;
+    const { recipients, htmlTemplate, subject, password, senderEmail }: any = req.body;
 
     if (!password) {
         return res.status(400).json({ error: 'كلمة المرور مطلوبة' });
+    }
+    if (!senderEmail) {
+        return res.status(400).json({ error: 'إيميل المُرسل مطلوب' });
     }
     if (!recipients || recipients.length === 0) {
         return res.status(400).json({ error: 'لا يوجد مستلمون' });
@@ -44,7 +47,7 @@ app.post('/api/send-emails', async (req: Request, res: Response) => {
         port: 587,
         secure: false,
         auth: {
-            user: 'falsuni@kakigroup.co',
+            user: senderEmail,
             pass: password,
         },
         tls: {
@@ -58,7 +61,7 @@ app.post('/api/send-emails', async (req: Request, res: Response) => {
         await transporter.verify();
     } catch (err: any) {
         return res.status(401).json({
-            error: `فشل الاتصال بالسيرفر: ${err.message}`,
+            error: `فشل الاتصال: ${err.message}`,
         });
     }
 
@@ -70,7 +73,7 @@ app.post('/api/send-emails', async (req: Request, res: Response) => {
 
         try {
             await transporter.sendMail({
-                from: '"Faisal Alsanea | KAKI GROUP" <falsuni@kakigroup.co>',
+                from: `"Faisal Alsanea | KAKI GROUP" <${senderEmail}>`,
                 to: recipient.email,
                 subject: subject,
                 html: personalizedHtml,
