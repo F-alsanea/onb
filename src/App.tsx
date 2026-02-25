@@ -520,6 +520,40 @@ def send_emails(excel_file_path):
     }
   };
 
+  const copyForEmail = async () => {
+    try {
+      // Replace placeholder with a generic greeting for manual copy
+      const content = htmlTemplate.replace(/\{customer_name\}/g, "العميل العزيز");
+
+      // Use Clipboard API for rich text (HTML)
+      const blob = new Blob([content], { type: 'text/html' });
+      const data = [new ClipboardItem({ 'text/html': blob })];
+
+      await navigator.clipboard.write(data);
+      alert("✅ تم نسخ التصميم كامل! انتقل الآن إلى Outlook أو بريدك المفضل واضغط 'لصق' (Paste) في مكان الرسالة.");
+    } catch (err) {
+      console.error(err);
+      alert("❌ عذراً، متصفحك لا يدعم هذه الميزة مباشرة. يرجى استخدام زر 'تحميل مسودة' بدلاً من ذلك.");
+    }
+  };
+
+  const downloadEml = () => {
+    const personalizedHtml = htmlTemplate.replace(/\{customer_name\}/g, "العميل العزيز");
+
+    // Construct a basic EML file (MIME)
+    const emlContent = [
+      `From: Faisal Alsanea <${senderEmail}>`,
+      `Subject: ${config.headline}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=utf-8',
+      '',
+      personalizedHtml
+    ].join('\r\n');
+
+    const blob = new Blob([emlContent], { type: 'message/rfc822' });
+    saveAs(blob, `Draft_${config.headline}.eml`);
+  };
+
   return (
     <div className="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans selection:bg-black selection:text-white">
       {/* Header */}
@@ -1028,6 +1062,39 @@ def send_emails(excel_file_path):
                     })</>
                   )}
                 </button>
+              </div>
+
+              {/* Manual Options (Backup) */}
+              <div className="bg-white rounded-3xl border border-dashed border-gray-300 p-8 shadow-sm mb-6 bg-gray-50/50">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 bg-gray-200 rounded-xl flex items-center justify-center">
+                    <Smartphone size={18} className="text-gray-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-lg">طرق إرسال بديلة (يدوية)</h2>
+                    <p className="text-sm text-gray-500">استخدم هذه الخيارات إذا كنت لا تملك كلمة مرور SMTP</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    onClick={copyForEmail}
+                    className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-2xl hover:border-black transition-all group"
+                  >
+                    <Copy className="w-8 h-8 text-gray-400 group-hover:text-black mb-3" />
+                    <span className="font-bold text-sm">نسخ للإيميل (Outlook)</span>
+                    <span className="text-[10px] text-gray-400 mt-1">انسخ التنسيق والصقه مباشرة</span>
+                  </button>
+
+                  <button
+                    onClick={downloadEml}
+                    className="flex flex-col items-center justify-center p-6 bg-white border border-gray-200 rounded-2xl hover:border-black transition-all group"
+                  >
+                    <Mail className="w-8 h-8 text-gray-400 group-hover:text-black mb-3" />
+                    <span className="font-bold text-sm">تحميل كمسودة (.eml)</span>
+                    <span className="text-[10px] text-gray-400 mt-1">افتحها كإيميل جاهز في حاسوبك</span>
+                  </button>
+                </div>
               </div>
 
               {/* Summary */}
