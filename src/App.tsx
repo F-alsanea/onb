@@ -143,6 +143,7 @@ export default function App() {
   ]);
   const [copied, setCopied] = useState(false);
   const [previewName, setPreviewName] = useState('فيصل');
+  const [greeting, setGreeting] = useState<'عزيزي' | 'عزيزتي' | 'عزيزي/عزيزتي'>('عزيزي');
 
   // --- Send State ---
   const [emailPassword, setEmailPassword] = useState('');
@@ -200,7 +201,7 @@ export default function App() {
             <!-- Greeting & Body -->
             <tr>
                 <td style="padding: 20px 40px; text-align: right; color: #000000; font-size: 17px; line-height: 1.7;">
-                    <p style="margin: 0 0 24px 0; font-weight: 700;">عزيزي/عزيزتي {customer_name}،</p>
+                    <p style="margin: 0 0 24px 0; font-weight: 700;">${greeting} {customer_name}،</p>
                     <p style="margin: 0; font-weight: 400; opacity: 0.8;">${config.body}</p>
                 </td>
             </tr>
@@ -277,7 +278,7 @@ export default function App() {
 </body>
 </html>
     `.trim();
-  }, [config]);
+  }, [config, greeting]);
 
   // Generate Python Code
   const pythonCode = useMemo(() => {
@@ -635,15 +636,29 @@ def send_emails(excel_file_path):
                     <Type size={14} /> محتوى الرسالة
                   </h2>
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">اسم الشخص (للمعاينة)</label>
-                      <input
-                        type="text"
-                        value={previewName}
-                        onChange={(e) => setPreviewName(e.target.value)}
-                        placeholder="مثال: أحمد"
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-0 transition-all outline-none"
-                      />
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">صيغة الترحيب</label>
+                        <select
+                          value={greeting}
+                          onChange={(e) => setGreeting(e.target.value as any)}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-0 transition-all outline-none bg-white"
+                        >
+                          <option value="عزيزي">عزيزي (للمذكر)</option>
+                          <option value="عزيزتي">عزيزتي (للمؤنث)</option>
+                          <option value="عزيزي/عزيزتي">عزيزي/عزيزتي (عام)</option>
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">اسم الشخص (للمعاينة)</label>
+                        <input
+                          type="text"
+                          value={previewName}
+                          onChange={(e) => setPreviewName(e.target.value)}
+                          placeholder="مثال: أحمد"
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-0 transition-all outline-none"
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">العنوان الرئيسي</label>
