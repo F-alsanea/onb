@@ -39,6 +39,9 @@ interface EmailConfig {
   signatureEmail: string;
   signatureAddress: string;
   logoUrl: string;
+  hideLogo?: boolean;
+  hideEmployeePhoto?: boolean;
+  showDynamicTable?: boolean;
 }
 
 const DEFAULT_CONFIG: EmailConfig = {
@@ -66,6 +69,28 @@ const INTERNAL_PRESET: Partial<EmailConfig> = {
   body: "الزملاء الأعزاء، نود مشاركتكم هذا التحديث الهام بخصوص سير العمل والمستجدات الأخيرة في القسم. نشكر لكم جهودكم المستمرة.",
   employeePhotoUrl: "",
   logoUrl: ""
+};
+
+const STATUS_UPDATE_PRESET: Partial<EmailConfig> = {
+  headline: "خطاب تعريف لتعديل الحالة المهنية في الأحوال المدنية",
+  body: `أفيدكم بأنه تم إعداد خطاب تعريف رسمي للموظفين الموضح بياناتهم تمهيدًا لتعديل حالتهم المهنية في الأحوال المدنية إلى ( موظف أهلي ).
+
+نرجو منكم التكرم بتكليف أحد السائقين باستلام الخطاب وتسليمه للموظفين المعنيين، مع إبلاغهم بضرورة إتمام التعديل خلال مدة أقصاها (4 أيام عمل) من تاريخ استلام الخطاب.
+
+كما نؤكد على ما يلي:
+•	يجب ان يُوقّع الموظف على النسخة المرفقة (نسخة الإدارة) مع كتابة عبارة "تم الاستلام"  والتوقيع على النسخة قبل تسليمه النسخة الأصلية لتقديمها للأحوال المدنية.
+•	بعد توقيع جميع الموظفين، يرجى إعادة النسخ الموقعة لقسم الموارد البشرية لحفظها في الملفات الرسمية.
+
+⚠️ ملاحظة مهمة:
+يرجى العلم أن هذا الإجراء مهم جدًا ويؤثر بشكل مباشر على نطاق الشركة، لذا نأمل حث الموظفين المعنيين على سرعة تعديل الحالة المهنية دون تأخير.
+
+شاكر ومقدر تعاونكم الدائم،
+مع خالص التحية والتقدير،`,
+  employeePhotoUrl: "",
+  logoUrl: "",
+  hideLogo: true,
+  hideEmployeePhoto: true,
+  showDynamicTable: true
 };
 
 // --- Helper Components ---
@@ -143,7 +168,19 @@ export default function App() {
   ]);
   const [copied, setCopied] = useState(false);
   const [previewName, setPreviewName] = useState('فيصل');
-  const [greeting, setGreeting] = useState<'عزيزي' | 'عزيزتي' | 'عزيزي/عزيزتي'>('عزيزي');
+  const [greeting, setGreeting] = useState<'عزيزي' | 'عزيزتي' | 'عزيزي/عزيزتي' | 'الأستاذ'>('الأستاذ');
+
+  // --- Dynamic Table State ---
+  const [dynamicTableTitle, setDynamicTableTitle] = useState('الموظفين السعوديين الجدد في (يرجى التحديد)');
+  const [dynamicTableEmployees, setDynamicTableEmployees] = useState<{
+    name: string;
+    company: string;
+    department: string;
+    nationality: string;
+    mobile: string;
+  }[]>([
+    { name: '', company: '', department: '', nationality: 'سعودي', mobile: '' }
+  ]);
 
   // --- Send State ---
   const [emailPassword, setEmailPassword] = useState('');
@@ -181,13 +218,13 @@ export default function App() {
     <center>
         <table class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; margin: 0 auto; background-color: #ffffff;">
             <!-- Logo Section -->
-            ${config.logoUrl ? `
+            ${config.hideLogo ? '' : (config.logoUrl ? `
             <tr>
                 <td style="padding: 60px 0 40px 0; text-align: center;">
                     <img src="${config.logoUrl}" alt="Logo" style="max-width: 140px; height: auto; display: block; margin: 0 auto;" referrerPolicy="no-referrer">
                 </td>
             </tr>
-            ` : '<tr><td style="padding: 40px 0 0 0;"></td></tr>'}
+            ` : '<tr><td style="padding: 40px 0 0 0;"></td></tr>')}
             
             <!-- Headline Section -->
             <tr>
@@ -201,19 +238,54 @@ export default function App() {
             <!-- Greeting & Body -->
             <tr>
                 <td style="padding: 20px 40px; text-align: right; color: #000000; font-size: 17px; line-height: 1.7;">
-                    <p style="margin: 0 0 24px 0; font-weight: 700;">${greeting} {customer_name}،</p>
-                    <p style="margin: 0; font-weight: 400; opacity: 0.8;">${config.body}</p>
+                    <p style="margin: 0 0 24px 0; font-weight: 700;">${greeting === 'الأستاذ' ? `الأستاذ ( ${customer_name} ) المحترم،<br>تحية طيبة وبعد،` : `${greeting} ${customer_name}،`}</p>
+                    <p style="margin: 0; font-weight: 400; opacity: 0.8; white-space: pre-wrap;">${config.body}</p>
                 </td>
             </tr>
 
+            <!-- Dynamic Table Section -->
+            ${config.showDynamicTable ? `
+            <tr>
+                <td style="padding: 20px 40px; text-align: center;">
+                    <table width="100%" cellpadding="8" cellspacing="0" border="1" style="border-collapse: collapse; border: 1px solid #dddddd; font-family: 'IBM Plex Sans Arabic', 'Tahoma', 'Arial', sans-serif;">
+                        <thead>
+                            <tr>
+                                <th colspan="5" style="background-color: #f9f9f9; text-align: center; border: 1px solid #000000; padding: 12px; font-weight: 700; font-size: 18px; color: #000000;">
+                                    ${dynamicTableTitle}
+                                </th>
+                            </tr>
+                            <tr style="background-color: #f0f0f0;">
+                                <th style="border: 1px solid #000000; text-align: right; padding: 8px; font-weight: 700;">إسم الموظف</th>
+                                <th style="border: 1px solid #000000; text-align: right; padding: 8px; font-weight: 700;">الشركة - عربي - للعقد</th>
+                                <th style="border: 1px solid #000000; text-align: right; padding: 8px; font-weight: 700;">الإدارة</th>
+                                <th style="border: 1px solid #000000; text-align: center; padding: 8px; font-weight: 700;">الجنسية</th>
+                                <th style="border: 1px solid #000000; text-align: center; padding: 8px; font-weight: 700;">رقم الجوال</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${dynamicTableEmployees.map(emp => `
+                            <tr>
+                                <td style="border: 1px solid #000000; text-align: right; padding: 8px;">${emp.name || ''}</td>
+                                <td style="border: 1px solid #000000; text-align: right; padding: 8px;">${emp.company || ''}</td>
+                                <td style="border: 1px solid #000000; text-align: right; padding: 8px;">${emp.department || ''}</td>
+                                <td style="border: 1px solid #000000; text-align: center; padding: 8px;">${emp.nationality || ''}</td>
+                                <td style="border: 1px solid #000000; text-align: center; padding: 8px;">${emp.mobile || ''}</td>
+                            </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            ` : ''}
+
             <!-- Employee Photo Section -->
-            ${config.employeePhotoUrl ? `
+            ${config.hideEmployeePhoto ? '' : (config.employeePhotoUrl ? `
             <tr>
                 <td style="padding: 20px 0 30px 0; text-align: center;">
                     <img src="${config.employeePhotoUrl}" alt="Employee Photo" style="width: 100%; max-width: 600px; height: auto; display: block; margin: 0 auto;" referrerPolicy="no-referrer">
                 </td>
             </tr>
-            ` : ''}
+            ` : '')}
             
             <!-- Signature Section -->
             <tr>
@@ -278,7 +350,7 @@ export default function App() {
 </body>
 </html>
     `.trim();
-  }, [config, greeting]);
+  }, [config, greeting, dynamicTableTitle, dynamicTableEmployees]);
 
   // Generate Python Code
   const pythonCode = useMemo(() => {
@@ -555,6 +627,20 @@ def send_emails(excel_file_path):
     saveAs(blob, `Draft_${config.headline}.eml`);
   };
 
+  const handleAddEmployeeRow = () => {
+    setDynamicTableEmployees([...dynamicTableEmployees, { name: '', company: '', department: '', nationality: 'سعودي', mobile: '' }]);
+  };
+
+  const handleUpdateEmployeeRow = (index: number, field: keyof typeof dynamicTableEmployees[0], value: string) => {
+    const newEmployees = [...dynamicTableEmployees];
+    newEmployees[index][field] = value;
+    setDynamicTableEmployees(newEmployees);
+  };
+
+  const handleRemoveEmployeeRow = (index: number) => {
+    setDynamicTableEmployees(dynamicTableEmployees.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="min-h-screen bg-[#F9F9F9] text-[#1A1A1A] font-sans selection:bg-black selection:text-white">
       {/* Header */}
@@ -623,10 +709,23 @@ def send_emails(excel_file_path):
                       ترحيب بموظف جديد
                     </button>
                     <button
-                      onClick={() => setConfig({ ...config, ...INTERNAL_PRESET })}
+                      onClick={() => {
+                        setConfig({ ...config, ...INTERNAL_PRESET });
+                        setGreeting('عزيزي');
+                      }}
                       className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium hover:border-black transition-all bg-white"
                     >
                       مراسلات داخلية
+                    </button>
+                    <button
+                      onClick={() => {
+                        setConfig({ ...config, ...STATUS_UPDATE_PRESET });
+                        setGreeting('الأستاذ');
+                        setPreviewName('الاسم');
+                      }}
+                      className="flex-1 px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium hover:border-black transition-all bg-white"
+                    >
+                      تعديل الحالة المهنية
                     </button>
                   </div>
                 </section>
@@ -647,6 +746,7 @@ def send_emails(excel_file_path):
                           <option value="عزيزي">عزيزي (للمذكر)</option>
                           <option value="عزيزتي">عزيزتي (للمؤنث)</option>
                           <option value="عزيزي/عزيزتي">عزيزي/عزيزتي (عام)</option>
+                          <option value="الأستاذ">الأستاذ ( الاسم ) المحترم، / تحية طيبة وبعد،</option>
                         </select>
                       </div>
                       <div className="flex-1">
@@ -680,6 +780,96 @@ def send_emails(excel_file_path):
                     </div>
                   </div>
                 </section>
+
+                {config.showDynamicTable && (
+                  <section>
+                    <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4 flex items-center gap-2">
+                      <Users size={14} /> بيانات الموظفين (للجدول)
+                    </h2>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">عنوان الجدول</label>
+                        <input
+                          type="text"
+                          value={dynamicTableTitle}
+                          onChange={(e) => setDynamicTableTitle(e.target.value)}
+                          className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-black focus:ring-0 transition-all outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-4 max-h-96 overflow-y-auto no-scrollbar pr-2">
+                        {dynamicTableEmployees.map((emp, idx) => (
+                          <div key={idx} className="p-4 bg-gray-50 border border-gray-200 rounded-xl relative">
+                            {dynamicTableEmployees.length > 1 && (
+                              <button
+                                onClick={() => handleRemoveEmployeeRow(idx)}
+                                className="absolute top-2 left-2 p-1 text-red-500 hover:bg-red-50 rounded"
+                              >
+                                <XCircle size={16} />
+                              </button>
+                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">إسم الموظف</label>
+                                <input
+                                  type="text"
+                                  value={emp.name}
+                                  onChange={(e) => handleUpdateEmployeeRow(idx, 'name', e.target.value)}
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-black outline-none text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">الشركة - عربي - للعقد</label>
+                                <input
+                                  type="text"
+                                  value={emp.company}
+                                  onChange={(e) => handleUpdateEmployeeRow(idx, 'company', e.target.value)}
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-black outline-none text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">الإدارة</label>
+                                <input
+                                  type="text"
+                                  value={emp.department}
+                                  onChange={(e) => handleUpdateEmployeeRow(idx, 'department', e.target.value)}
+                                  className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-black outline-none text-sm"
+                                />
+                              </div>
+                              <div className="flex gap-3">
+                                <div className="flex-1">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">الجنسية</label>
+                                  <input
+                                    type="text"
+                                    value={emp.nationality}
+                                    onChange={(e) => handleUpdateEmployeeRow(idx, 'nationality', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-black outline-none text-sm"
+                                  />
+                                </div>
+                                <div className="flex-1">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">رقم الجوال</label>
+                                  <input
+                                    type="text"
+                                    value={emp.mobile}
+                                    onChange={(e) => handleUpdateEmployeeRow(idx, 'mobile', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-black outline-none text-sm"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={handleAddEmployeeRow}
+                        className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 font-medium hover:border-black hover:text-black transition-colors flex justify-center items-center gap-2"
+                      >
+                        + إضافة موظف آخر
+                      </button>
+                    </div>
+                  </section>
+                )}
 
                 <section>
                   <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">صورة الموظف</h2>
