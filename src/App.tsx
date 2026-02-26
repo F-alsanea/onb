@@ -57,18 +57,34 @@ const DEFAULT_CONFIG: EmailConfig = {
   logoUrl: "https://kakihg.net/wp-content/uploads/2025/08/kaki_logo-footer.png"
 };
 
+const PROMO_PRESET: Partial<EmailConfig> = {
+  headline: "عرض خاص لفترة محدودة",
+  body: "نقدم لكم أحدث عروضنا وخدماتنا التي تم تصميمها خصيصاً لتلبية احتياجات أعمالكم المتقدمة.",
+  employeePhotoUrl: "",
+  logoUrl: DEFAULT_CONFIG.logoUrl,
+  hideLogo: false,
+  hideEmployeePhoto: false,
+  showDynamicTable: false
+};
+
 const WELCOME_PRESET: Partial<EmailConfig> = {
   headline: "أهلاً بك في عائلة مجموعة الكعكي",
   body: "نحن متحمسون جداً لانضمامك إلينا كعضو جديد في فريقنا. نؤمن بأن مهاراتك وخبراتك ستكون إضافة قيمة لمجموعتنا، ونتطلع للعمل معك لتحقيق نجاحات مشتركة.",
   employeePhotoUrl: "https://picsum.photos/seed/welcome/400/400",
-  logoUrl: "https://kakihg.net/wp-content/uploads/2025/08/kaki_logo-footer.png"
+  logoUrl: DEFAULT_CONFIG.logoUrl,
+  hideLogo: false,
+  hideEmployeePhoto: false,
+  showDynamicTable: false
 };
 
 const INTERNAL_PRESET: Partial<EmailConfig> = {
   headline: "تحديث داخلي لفريق العمل",
   body: "الزملاء الأعزاء، نود مشاركتكم هذا التحديث الهام بخصوص سير العمل والمستجدات الأخيرة في القسم. نشكر لكم جهودكم المستمرة.",
   employeePhotoUrl: "",
-  logoUrl: ""
+  logoUrl: "",
+  hideLogo: false,
+  hideEmployeePhoto: false,
+  showDynamicTable: false
 };
 
 const STATUS_UPDATE_PRESET: Partial<EmailConfig> = {
@@ -238,7 +254,7 @@ export default function App() {
             <!-- Greeting & Body -->
             <tr>
                 <td style="padding: 20px 40px; text-align: right; color: #000000; font-size: 17px; line-height: 1.7;">
-                    <p style="margin: 0 0 24px 0; font-weight: 700;">${greeting === 'الأستاذ' ? 'الأستاذ ( {customer_name} ) المحترم،<br>تحية طيبة وبعد،' : `${greeting} {customer_name}،`}</p>
+                    <p style="margin: 0 0 24px 0; font-weight: 700;">${greeting === 'الأستاذ' ? 'الأستاذ {customer_name} المحترم،<br>تحية طيبة وبعد،' : `${greeting} {customer_name}،`}</p>
                     <p style="margin: 0; font-weight: 400; opacity: 0.8; white-space: pre-wrap;">${config.body}</p>
                 </td>
             </tr>
@@ -746,7 +762,7 @@ def send_emails(excel_file_path):
                           <option value="عزيزي">عزيزي (للمذكر)</option>
                           <option value="عزيزتي">عزيزتي (للمؤنث)</option>
                           <option value="عزيزي/عزيزتي">عزيزي/عزيزتي (عام)</option>
-                          <option value="الأستاذ">الأستاذ ( الاسم ) المحترم، / تحية طيبة وبعد،</option>
+                          <option value="الأستاذ">الأستاذ الاسم المحترم، / تحية طيبة وبعد،</option>
                         </select>
                       </div>
                       <div className="flex-1">
