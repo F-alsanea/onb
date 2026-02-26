@@ -54,7 +54,10 @@ const DEFAULT_CONFIG: EmailConfig = {
   signatureMob: "+966 596995687",
   signatureEmail: "falsanea@kakigroup.co",
   signatureAddress: "Alhamraa dist., PO Box 18833, Jeddah 21425, Kingdom of Saudi Arabia",
-  logoUrl: "https://kakihg.net/wp-content/uploads/2025/08/kaki_logo-footer.png"
+  logoUrl: "https://kakihg.net/wp-content/uploads/2025/08/kaki_logo-footer.png",
+  hideLogo: false,
+  hideEmployeePhoto: false,
+  showDynamicTable: false
 };
 
 const PROMO_PRESET: Partial<EmailConfig> = {
