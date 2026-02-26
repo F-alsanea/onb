@@ -55,7 +55,7 @@ const DEFAULT_CONFIG: EmailConfig = {
 };
 
 const WELCOME_PRESET: Partial<EmailConfig> = {
-  headline: "أهلاً بك في عائلة مجموعة كعكي",
+  headline: "أهلاً بك في عائلة مجموعة الكعكي",
   body: "نحن متحمسون جداً لانضمامك إلينا كعضو جديد في فريقنا. نؤمن بأن مهاراتك وخبراتك ستكون إضافة قيمة لمجموعتنا، ونتطلع للعمل معك لتحقيق نجاحات مشتركة.",
   employeePhotoUrl: "https://picsum.photos/seed/welcome/400/400",
   logoUrl: "https://kakihg.net/wp-content/uploads/2025/08/kaki_logo-footer.png"
@@ -522,8 +522,8 @@ def send_emails(excel_file_path):
 
   const copyForEmail = async () => {
     try {
-      // Replace placeholder with a generic greeting for manual copy
-      const content = htmlTemplate.replace(/\{customer_name\}/g, "العميل العزيز");
+      // Replace placeholder with the person's name from preview
+      const content = htmlTemplate.replace(/\{customer_name\}/g, previewName);
 
       // Use Clipboard API for rich text (HTML)
       const blob = new Blob([content], { type: 'text/html' });
@@ -538,7 +538,7 @@ def send_emails(excel_file_path):
   };
 
   const downloadEml = () => {
-    const personalizedHtml = htmlTemplate.replace(/\{customer_name\}/g, "العميل العزيز");
+    const personalizedHtml = htmlTemplate.replace(/\{customer_name\}/g, previewName);
 
     // Construct a basic EML file (MIME)
     const emlContent = [
