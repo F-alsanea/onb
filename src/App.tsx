@@ -238,8 +238,8 @@ export default function App() {
             <!-- Greeting & Body -->
             <tr>
                 <td style="padding: 20px 40px; text-align: right; color: #000000; font-size: 17px; line-height: 1.7;">
-                    <p style="margin: 0 0 24px 0; font-weight: 700;">${greeting === 'الأستاذ' ? `الأستاذ ( ${customer_name} ) المحترم،<br>تحية طيبة وبعد،` : `${greeting} ${customer_name}،`}</p>
-                    <p style="margin: 0; font-weight: 400; opacity: 0.8; white-space: pre-wrap;">${config.body}</p>
+                    <p style="margin: 0 0 24px 0; font-weight: 700;">\${greeting === 'الأستاذ' ? \`الأستاذ ( {customer_name} ) المحترم،<br>تحية طيبة وبعد،\` : \`\${greeting} {customer_name}،\`}</p>
+                    <p style="margin: 0; font-weight: 400; opacity: 0.8; white-space: pre-wrap;">\${config.body}</p>
                 </td>
             </tr>
 
